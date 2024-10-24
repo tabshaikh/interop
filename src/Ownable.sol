@@ -57,7 +57,7 @@ abstract contract Ownable is Context {
         _;
     }
 
-    modifier onlyPreviousContract() virtual() {
+    modifier onlyPreviousContract() virtual {
         require(msg.sender == previousContract, "!Authorized");
         _;
     }
@@ -95,7 +95,7 @@ abstract contract Ownable is Context {
     }
 
     function crossRenounceOwnership() public virtual onlyPreviousContract {
-        if (owner == address(0)) {
+        if (owner() == address(0)) {
             return;
         }
         _transferOwnership(address(0));
@@ -116,7 +116,7 @@ abstract contract Ownable is Context {
         if (newOwner == address(0)) {
             revert OwnableInvalidOwner(address(0));
         }
-        if (newOwner == owner) {
+        if (newOwner == owner()) {
             return;
         }
         _transferOwnership(newOwner);
