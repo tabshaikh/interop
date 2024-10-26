@@ -20,8 +20,6 @@ import {Context} from "./utils/Context.sol";
 abstract contract Ownable is Context {
     address private _owner;
     address public previousContract;
-    uint256 public nextChainId;
-    address public nextContract;
     bool isSuperOwner;
 
     /**
@@ -39,14 +37,12 @@ abstract contract Ownable is Context {
     /**
      * @dev Initializes the contract setting the address provided by the deployer as the initial owner.
      */
-    constructor(address initialOwner, address _previousContract, address _nextContract, uint256 _nextChainId) {
+    constructor(address initialOwner, address _previousContract) {
         if (initialOwner == address(0)) {
             revert OwnableInvalidOwner(address(0));
         }
         _transferOwnership(initialOwner);
         previousContract = _previousContract;
-        nextContract = _nextContract;
-        nextChainId = _nextChainId;
     }
 
     /**
@@ -140,5 +136,5 @@ abstract contract Ownable is Context {
         // Example: Call a cross-chain messaging protocol to notify the next contract
         // This is a placeholder for actual cross-chain communication logic
         // crossChainProtocol.sendMessage(nextChainId, nextContract, abi.encode(newOwner));
-    } 
+    }
 }
