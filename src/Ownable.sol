@@ -20,7 +20,7 @@ import {Context} from "./utils/Context.sol";
 abstract contract Ownable is Context {
     address private _owner;
     address public previousContract;
-    bool isSuperOwner;
+    bool public isSuperOwner;
 
     /**
      * @dev The caller account is not authorized to perform an operation.
@@ -28,21 +28,36 @@ abstract contract Ownable is Context {
     error OwnableUnauthorizedAccount(address account);
 
     /**
-     * @dev The owner is not a valid owner account. (eg. `address(0)`)
+     * @dev The owner is not a valid owner account. (eg. `address(0)`).
      */
     error OwnableInvalidOwner(address owner);
+
+    /**
+     * @dev The caller is not previousContract.
+     */
+    error OwnableInvalidCaller(address owner);
+
+    /**
+     * @dev contract is not super owner.
+     */
+    error OwnableInvalidSuperOwner();
+
+    event SuperOwnerStatusUpdated(bool oldStatus, bool newStatus);
+
+    event PreviousContractUpdated(address indexed oldContract, address indexed newContract);
 
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
     /**
      * @dev Initializes the contract setting the address provided by the deployer as the initial owner.
      */
-    constructor(address initialOwner, address _previousContract) {
+    constructor(address initialOwner, address _previousContract, bool _isSuperOwner) {
         if (initialOwner == address(0)) {
             revert OwnableInvalidOwner(address(0));
         }
         _transferOwnership(initialOwner);
-        previousContract = _previousContract;
+        _setPreviousContract(_previousContract);
+        _setIsSuperOwner(_isSuperOwner);
     }
 
     /**
@@ -53,14 +68,62 @@ abstract contract Ownable is Context {
         _;
     }
 
+    /**
+     * @dev Throws if called by any account other than previousContract.
+     */
     modifier onlyPreviousContract() virtual {
-        require(msg.sender == previousContract, "!Authorized");
+        if (msg.sender != previousContract) {
+            revert OwnableInvalidCaller(msg.sender);
+        }
         _;
     }
 
+    /**
+     * @dev Throws if called by any account other than previousContract.
+     */
     modifier onlySuperOwner() {
-        require(isSuperOwner);
+        if(!isSuperOwner && previousContract != address(0)) {
+            revert OwnableInvalidSuperOwner();
+        }
         _;
+    }
+
+    /**
+     * @dev sets if this contract isSuperOwner (`_isSuperOwner`).
+     * Can only be called by the current owner.
+     */
+    function setIsSuperOwner(bool _isSuperOwner) external onlyOwner {
+        _setIsSuperOwner(_isSuperOwner);
+    }
+
+    /**
+     * @dev sets `isSuperOwner` status of contract to new status `_isSuperOwner`
+     * Internal function without access restriction.
+     */
+    function _setIsSuperOwner(bool _isSuperOwner) internal {
+        bool oldSuperOwnerStatus = isSuperOwner;
+        isSuperOwner = _isSuperOwner;
+
+        emit SuperOwnerStatusUpdated(oldSuperOwnerStatus, _isSuperOwner);
+    }
+
+    /**
+     * @dev sets the previousContract to new address(`_previousContract`).
+     * Can only be called by the current owner.
+     */
+    function setPreviousContract(address _previousContract) external onlyOwner {
+        _setPreviousContract(_previousContract);
+    }
+
+    /**
+     * @dev sets previousContract to new `_previousContract`
+     * Internal function without access restriction.
+     */
+    function _setPreviousContract(address _previousContract) internal {
+        address _oldPreviousContract = previousContract;
+        previousContract = _previousContract;
+
+        emit PreviousContractUpdated(_oldPreviousContract, _previousContract);
     }
 
     /**
@@ -90,6 +153,10 @@ abstract contract Ownable is Context {
         _transferOwnership(address(0));
     }
 
+    /**
+     * @dev similar to renounce ownership but this function can only be called by previous contract.
+     * if the ownership has already been renounced it returns without doing anything.
+     */
     function crossRenounceOwnership() public virtual onlyPreviousContract {
         if (owner() == address(0)) {
             return;
@@ -108,6 +175,11 @@ abstract contract Ownable is Context {
         _transferOwnership(newOwner);
     }
 
+    /**
+     * @dev Transfers ownership of the contract to a new account (`newOwner`).
+     * if the ownership is already transferred it returns without doing anything.
+     * Can only be called by previous contract.
+     */
     function crossTransferOwnership(address newOwner) public virtual onlyPreviousContract {
         if (newOwner == address(0)) {
             revert OwnableInvalidOwner(address(0));
@@ -131,10 +203,8 @@ abstract contract Ownable is Context {
         _sendCrossChainMessage(newOwner);
     }
 
-    function _sendCrossChainMessage(address newOwner) internal virtual {
-        // Implement cross-chain message logic here
-        // Example: Call a cross-chain messaging protocol to notify the next contract
-        // This is a placeholder for actual cross-chain communication logic
-        // crossChainProtocol.sendMessage(nextChainId, nextContract, abi.encode(newOwner));
-    }
+    /**
+     * @dev Implements cross-chain message logic here to call all `crossTransferOwnership` or `crossRenounceOwnership`.
+     */
+    function _sendCrossChainMessage(address newOwner) internal virtual {}
 }
