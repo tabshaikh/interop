@@ -5,8 +5,22 @@ pragma solidity ^0.8.20;
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 abstract contract CrossOwnable is Ownable {
+    /**
+     * @dev Address of the previous contract that has permission to call cross-chain ownership functions.
+     * This is used to enable cross-chain ownership transfers between contracts.
+     */
     address public previousContract;
+
+    /**
+     * @dev Indicates whether this contract is a super owner, which means it has special privileges
+     * in the cross-chain ownership hierarchy. A super owner contract can initiate ownership transfers
+     * across chains without requiring approval from the previous contract.
+     */
     bool public isSuperOwner;
+
+    // =============================================================
+    // Errors
+    // =============================================================
 
     /**
      * @dev The caller is not previousContract.
@@ -14,13 +28,20 @@ abstract contract CrossOwnable is Ownable {
     error OwnableInvalidCaller(address owner);
 
     /**
-     * @dev contract is not super owner.
+     * @dev The contract is not super owner.
      */
     error OwnableInvalidSuperOwner();
 
-    event SuperOwnerStatusUpdated(bool oldStatus, bool newStatus);
+    // =============================================================
+    // Events
+    // =============================================================
 
+    event SuperOwnerStatusUpdated(bool oldStatus, bool newStatus);
     event PreviousContractUpdated(address indexed oldContract, address indexed newContract);
+
+    // =============================================================
+    // Constructor
+    // =============================================================
 
     /**
      * @dev Initializes the contract setting the address provided by the deployer as the initial owner.
@@ -29,6 +50,10 @@ abstract contract CrossOwnable is Ownable {
         _setPreviousContract(_previousContract);
         _setIsSuperOwner(_isSuperOwner);
     }
+
+    // =============================================================
+    // Modifiers
+    // =============================================================
 
     /**
      * @dev Throws if called by any account other than previousContract.
@@ -50,6 +75,10 @@ abstract contract CrossOwnable is Ownable {
         _;
     }
 
+    // =============================================================
+    // External Functions
+    // =============================================================
+
     /**
      * @dev sets if this contract isSuperOwner (`_isSuperOwner`).
      * Can only be called by the current owner.
@@ -59,33 +88,11 @@ abstract contract CrossOwnable is Ownable {
     }
 
     /**
-     * @dev sets `isSuperOwner` status of contract to new status `_isSuperOwner`
-     * Internal function without access restriction.
-     */
-    function _setIsSuperOwner(bool _isSuperOwner) internal {
-        bool oldSuperOwnerStatus = isSuperOwner;
-        isSuperOwner = _isSuperOwner;
-
-        emit SuperOwnerStatusUpdated(oldSuperOwnerStatus, _isSuperOwner);
-    }
-
-    /**
      * @dev sets the previousContract to new address(`_previousContract`).
      * Can only be called by the current owner.
      */
     function setPreviousContract(address _previousContract) external onlyOwner {
         _setPreviousContract(_previousContract);
-    }
-
-    /**
-     * @dev sets previousContract to new `_previousContract`
-     * Internal function without access restriction.
-     */
-    function _setPreviousContract(address _previousContract) internal {
-        address _oldPreviousContract = previousContract;
-        previousContract = _previousContract;
-
-        emit PreviousContractUpdated(_oldPreviousContract, _previousContract);
     }
 
     /**
@@ -134,6 +141,32 @@ abstract contract CrossOwnable is Ownable {
             return;
         }
         _transferOwnership(newOwner);
+    }
+
+    // =============================================================
+    // Internal Functions
+    // =============================================================
+
+    /**
+     * @dev sets `isSuperOwner` status of contract to new status `_isSuperOwner`
+     * Internal function without access restriction.
+     */
+    function _setIsSuperOwner(bool _isSuperOwner) internal {
+        bool oldSuperOwnerStatus = isSuperOwner;
+        isSuperOwner = _isSuperOwner;
+
+        emit SuperOwnerStatusUpdated(oldSuperOwnerStatus, _isSuperOwner);
+    }
+
+    /**
+     * @dev sets previousContract to new `_previousContract`
+     * Internal function without access restriction.
+     */
+    function _setPreviousContract(address _previousContract) internal {
+        address _oldPreviousContract = previousContract;
+        previousContract = _previousContract;
+
+        emit PreviousContractUpdated(_oldPreviousContract, _previousContract);
     }
 
     /**
