@@ -8,6 +8,28 @@ OnlySuperOwner should not depend on some other modifer to check the partial stat
 
 The practical consideration is when devs just use `onlySuperOwner` modifier on critical functions and not `onlyOwner` preceeded by it as it is not mandatory for now ( due to no docs and inline comments stating that )
 
+For example , say a function `updateImplementation` in the `crossOwnable` inherited contract which only enforces `onlySuperOwner`
+
+```solidity
+import "./CrossOwnable.sol";
+
+contract MyCrossOwnable is CrossOwnable {
+    address implementation;
+
+    constructor(
+        address initialOwner,
+        address _previousContract,
+        bool _isSuperOwner
+    ) CrossOwnable(initialOwner, previousContract, isSuperOwner) {}
+
+    function updateImplementation(address newImplementation) public onlySuperOwner {
+        implementation = newImplementation;
+    }
+}
+
+```
+In this way , even after ownership is renounced , the method will still be able to operate.
+
 ## PoC
 
 ```solidity
