@@ -66,7 +66,7 @@ abstract contract CrossOwnable is Ownable {
     }
 
     /**
-     * @dev Throws if called by any account other than previousContract.
+     * @dev Throws if called by Non-superOwner + previous contract is not set
      */
     modifier onlySuperOwner() {
         if (!isSuperOwner && previousContract != address(0)) {
