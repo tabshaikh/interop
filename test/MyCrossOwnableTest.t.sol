@@ -11,9 +11,11 @@ contract CrossOwnableTest is Test {
         mycrossownable = new MyCrossOwnable(owner, previousContract, true);
     }
 
-    function test_isSuperOwner_active_after_renounceOwnership() public {
+    function test_onlySuperOwner_functions_after_ownership_renounce() public {
         vm.prank(owner);
         mycrossownable.renounceOwnership();
+
+        vm.expectRevert(CrossOwnable.OwnableInvalidSuperOwner.selector);
         mycrossownable.updateImplementation(newImplementation);
         
     }

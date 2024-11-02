@@ -69,7 +69,7 @@ abstract contract CrossOwnable is Ownable {
      * @dev Throws if called by Non-superOwner + previous contract is not set
      */
     modifier onlySuperOwner() {
-        if (!isSuperOwner && previousContract != address(0)) {
+        if ( (owner() !=msg.sender) || (!isSuperOwner && previousContract != address(0)) ) {
             revert OwnableInvalidSuperOwner();
         }
         _;
@@ -97,12 +97,12 @@ abstract contract CrossOwnable is Ownable {
 
     /**
      * @dev Leaves the contract without owner. It will not be possible to call
-     * `onlyOwner` functions. Can only be called by the current owner.
+     * `onlySuperOwner` functions. Can only be called by the current onlySuperOwner.
      *
      * NOTE: Renouncing ownership will leave the contract without an owner,
      * thereby disabling any functionality that is only available to the owner.
      */
-    function renounceOwnership() public override onlyOwner onlySuperOwner {
+    function renounceOwnership() public override  onlySuperOwner {
         _transferOwnership(address(0));
     }
 
@@ -121,7 +121,7 @@ abstract contract CrossOwnable is Ownable {
      * @dev Transfers ownership of the contract to a new account (`newOwner`).
      * Can only be called by the current owner.
      */
-    function transferOwnership(address newOwner) public override onlyOwner onlySuperOwner {
+    function transferOwnership(address newOwner) public override onlySuperOwner {
         if (newOwner == address(0)) {
             revert OwnableInvalidOwner(address(0));
         }
